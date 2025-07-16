@@ -3,6 +3,8 @@ from pathlib import Path
 
 LOG_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
+Logger = logging.Logger
+
 def setup_logging(level="INFO", logfile: Path | None = None):
     handlers = [logging.StreamHandler()]
     if logfile:
@@ -15,3 +17,5 @@ def setup_logging(level="INFO", logfile: Path | None = None):
         force=True,
     )
 
+def get_logger(name: str) -> logging.Logger:
+    return logging.getLogger(name)
