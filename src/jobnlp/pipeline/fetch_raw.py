@@ -16,10 +16,13 @@ def load_config():
 
     return cfg
 
-if __name__ == "__main__":
+def main():
     LOG_PATH = pathlib.Path("log/fetch_raw.log")
     
     logger.setup_logging(logfile=LOG_PATH)
 
     classif = NewsPapAds(config=load_config())
     classif.run_and_store()
+
+if __name__ == "__main__":
+    main()
