@@ -8,6 +8,7 @@ Logger = logging.Logger
 def setup_logging(level="INFO", logfile: Path | None = None):
     handlers = [logging.StreamHandler()]
     if logfile:
+        logfile.parent.mkdir(parents=True, exist_ok=True) 
         handlers.append(logging.FileHandler(logfile, encoding="utf-8"))
 
     logging.basicConfig(
