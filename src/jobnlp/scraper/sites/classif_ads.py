@@ -1,13 +1,12 @@
-import logging, jsonlines, gzip
+import jsonlines, gzip
 from pathlib import Path
 from datetime import datetime, timezone
 from bs4 import NavigableString
 
-from scraper.base import BaseScraper
+from jobnlp.scraper.base import BaseScraper
+from jobnlp.utils.logger import get_logger
 
-
-log = logging.getLogger(__name__)
-
+log = get_logger(__name__)
 
 class NewsPapAds(BaseScraper):
 
