@@ -52,8 +52,6 @@ idna==3.10
 importlib_metadata==8.7.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
-# Editable Git install with no remote (jobnlp==0.1.0)
--e /home/gabrielmolina/Documentos/proyectos_data_engineering/scraper_clasificados
 jsonlines==4.0.0
 jsonschema==4.24.0
 jsonschema-specifications==2025.4.1
