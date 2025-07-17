@@ -33,7 +33,8 @@ class NewsPapAds(BaseScraper):
 
         for p in paid:
             yield {
-                "raw_html": str(p),
+                "raw": str(p),
+                "type":"html",
                 "selector": "css_class=pago",
                 "scraped_at": ts,
                 "source_url": self.url,
@@ -44,7 +45,8 @@ class NewsPapAds(BaseScraper):
             for nodo in normal.find_all(string=True, recursive=True):
                 if isinstance(nodo, NavigableString) and nodo.strip():
                     yield {
-                        "raw_text": str(nodo),
+                        "raw": str(nodo),
+                        "type":"text_node",
                         "selector": "css_class=avisos normal",
                         "scraped_at": ts,
                         "source_url": self.url,
