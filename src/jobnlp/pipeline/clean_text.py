@@ -4,25 +4,58 @@ import pathlib
 import re
 from bs4 import BeautifulSoup
 from datetime import datetime
-import argparse
-
+import argparse, json
+from pathlib import Path
+import jobnlp
 from jobnlp.utils import logger
 
 RAW_DIR = pathlib.Path("data/raw")
 BRONZE_DIR = pathlib.Path("data/processed/bronze")
 BRONZE_DIR.mkdir(parents=True, exist_ok=True)
+PATTERNS_PATH = Path(jobnlp.__file__).parent / "utils" / "clean_patterns.json"
 
-EMAIL_PATTERN = r"\b[\w\.-]+@[\w\.-]+\.\w+\b"
+try:
+    with open(PATTERNS_PATH, "r", encoding="utf-8") as f:
+        PATTERNS: dict = json.load(f)
+except FileNotFoundError as e:
+    print(f"Missing {PATTERNS_PATH.name} file.")
+    raise e
+
+def remove_pattern(pattern_key: str, pattern_file: dict, text: str):
+    combined = "|".join(pattern_file[pattern_key])
+    return re.sub(combined, "", text, flags=re.IGNORECASE)
+
+def remove_addresses(text: str) -> str:
+    return remove_pattern("address_patterns", PATTERNS, text)
+
+def remove_phone_numbers(text: str) -> str:
+    return remove_pattern("phone_patterns", PATTERNS, text)
+
+def remove_emails(text: str) -> str:
+    return remove_pattern("email_patterns", PATTERNS, text)
+
+def remove_urls(text: str) -> str:
+    return remove_pattern("url_patterns", PATTERNS, text)
+
+def remove_residual_phrases(text: str) -> str:
+    return remove_pattern("residual_phrases", PATTERNS, text)
+
+def remove_html_tags(text: str) -> str:
+    return re.sub(r"<.*?>", "", text)
+
+def normalize_text(text: str) -> str:
+    text = text.lower()
+    text = remove_addresses(text)
+    text = remove_phone_numbers(text)
+    text = remove_emails(text)
+    text = remove_urls(text)
+    text = remove_residual_phrases(text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 def clean_html(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, "html.parser")
     return soup.get_text(separator=" ", strip=True)
-
-def normalize_text(text: str) -> str:
-    text = text.lower()
-    text = re.sub(EMAIL_PATTERN, "", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
 
 def process_file(file_path: pathlib.Path) -> pd.DataFrame:
 
