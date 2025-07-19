@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_jobsnlp
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    volumes:
+      - ../data/processed/postgresdata:/var/lib/postgresql/data
+    networks:
+      - docker_jobsnlpnet
+
+networks:
+  docker_jobsnlpnet:
+    driver: bridge
