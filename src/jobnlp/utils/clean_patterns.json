@@ -1,5 +1,6 @@
 {
   "address_patterns": [
+    "\\be/\\s?\\d{1,3}\\sy\\s\\d{1,3}\\b",
     "\\d{1,3}\\s*e/\\s*\\d{1,3}\\s*y\\s*\\d{1,3}",
     "\\b(?:calle|av\\.?|avenida|diag\\.?|diagonal)\\s+\\d{1,3}(?:\\s+n?[°º]?\\s?\\d{1,4})?",
     "\\b(?:esquina|esq\\.?)\\s+\\d{1,3}",
