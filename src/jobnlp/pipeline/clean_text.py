@@ -1,13 +1,16 @@
 import jsonlines, gzip
 import pandas as pd
 import pathlib
-import re
+import re, hashlib
 from bs4 import BeautifulSoup
 from datetime import datetime
 import argparse, json
 from pathlib import Path
+
 import jobnlp
 from jobnlp.utils import logger
+from jobnlp.db.schemas import db_init
+from jobnlp.db.models import insert_bronze
 
 RAW_DIR = pathlib.Path("data/raw")
 BRONZE_DIR = pathlib.Path("data/processed/bronze")
@@ -40,8 +43,8 @@ def remove_urls(text: str) -> str:
 def remove_residual_phrases(text: str) -> str:
     return remove_pattern("residual_phrases", PATTERNS, text)
 
-def remove_html_tags(text: str) -> str:
-    return re.sub(r"<.*?>", "", text)
+def gen_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 def normalize_text(text: str) -> str:
     text = text.lower()
@@ -57,9 +60,9 @@ def clean_html(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, "html.parser")
     return soup.get_text(separator=" ", strip=True)
 
-def process_file(file_path: pathlib.Path) -> pd.DataFrame:
+def process_file(file_path: pathlib.Path) -> list[dict]:
 
-    rows = []
+    adds_list = []
 
     with gzip.open(file_path, "rt", encoding="utf-8") as f:
         reader = jsonlines.Reader(f)
@@ -71,20 +74,35 @@ def process_file(file_path: pathlib.Path) -> pd.DataFrame:
             clean = normalize_text(clean)
 
             if clean:
-                rows.append({
-                    "text_clean": clean,
-                    "scraped_at": obj.get("scraped_at"),
+               adds_list.append({
+                    "norm_text": clean,
+                    "scrap_date": obj.get("scraped_at"),
                     "source_url": obj.get("source_url"),
+                    "hash": gen_hash(clean)
                 })
 
         reader.close()
-    return pd.DataFrame(rows)
+    return adds_list
+
+def load_to_bronze(add_list: list[dict], 
+                   log: logger.Logger, raw_path: Path):
+    inserted_count = 0
+    for add in add_list:
+        res = insert_bronze(add)
+        inserted_count += res
+    if inserted_count < 1:
+        log.warning(f"No new ads were inserted from: {raw_path.name}")
+    else:
+        log.info((f"{inserted_count} new ads were inserted from:"
+                  f"{raw_path.name}"))
 
 def main():
 
     LOG_PATH = pathlib.Path("log/clean_text.log")
     logger.setup_logging(logfile=LOG_PATH)
     log = logger.get_logger(__name__)
+    
+    db_init()
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -100,8 +118,8 @@ def main():
         try:
             run_date = datetime.strptime(args.date, "%Y-%m-%d").date()
             log.info(f"Executing clean_text task for: {run_date}")
-        except ValueError:
-            raise ValueError("Invalid. Use format: YYYY-MM-DD.")
+        except ValueError as e:
+            raise e("Invalid. Use format: YYYY-MM-DD.")
     else:
         log.info("defoult clean_text task execution (date: today)")
         run_date = datetime.today().date()
@@ -112,11 +130,15 @@ def main():
 
     if raw_path.exists():
         log.info(f"Processing file: {raw_path}")
-        df = process_file(raw_path)
-        out_name = f"bronze_{ds_nodash}.parquet"
-        out_path = BRONZE_DIR / out_name
-        df.to_parquet(out_path, index=False)
-        log.info(f"Processed: {raw_path.name} -> {out_name}")
+        add_list = process_file(raw_path)
+        
+        try: 
+            load_to_bronze(add_list, log, raw_path)
+            log.info((f"Processed: {raw_path.name} -> "
+                      "DB: adds_lakehouse.adds_bronze"))
+        except:
+            log.error((f"Could not save {raw_path.name} to DB: "
+                        "adds_lakehouse.adds_bronze"))
     else:
         log.error(f"{raw_path} not found.")
 
