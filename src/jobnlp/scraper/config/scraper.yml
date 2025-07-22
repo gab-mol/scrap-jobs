@@ -1,0 +1,4 @@
+scraping_url:
+  newsp:
+    classif_ads_s1: "https://clasificados.eldia.com/Trabajo-La-Plata-EMPLEOS-PEDIDOS"
+    classif_ads_s2: "https://clasificados.eldia.com/empleos-la-plata"
