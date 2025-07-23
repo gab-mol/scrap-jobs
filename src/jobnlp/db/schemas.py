@@ -5,12 +5,21 @@ from jobnlp.db.connection import conn
 
 log = get_logger(__name__)
 
+ALLOWED_SCHEMES = {"adds_lakehouse"}
+ALLOWED_TABLES = {"adds_bronze", "adds_silver"}
+
+def validate_db_identifiers(scheme: str, table: str) -> None:
+    if scheme not in ALLOWED_SCHEMES:
+        raise ValueError(f"Scheme '{scheme}' is not allowed.")
+    if table not in ALLOWED_TABLES:
+        raise ValueError(f"Table '{table}' is not allowed.")
+
+
 def create_schemas() -> None:
     with conn.cursor() as cur:
         cur.execute("""
         CREATE SCHEMA IF NOT EXISTS adds_lakehouse;
         """)
-        # log.info("Schema 'adds_lakehouse' created.")
         conn.commit()
 
 def create_bronze() -> None:
@@ -27,7 +36,6 @@ def create_bronze() -> None:
             );
             """)
         conn.commit()
-        # log.info("Table 'adds_bronze' created.")
     except OperationalError:
         log.error("Unable to create 'adds_bronze' table.")
         raise
