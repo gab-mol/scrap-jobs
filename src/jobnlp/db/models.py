@@ -52,9 +52,9 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
 
     Parameters:
         table: layer table name (see jobnlp.db.schemas).
-        date: date format %Y/%m/%d
-        since: date format %Y/%m/%d
-        to: date format %Y/%m/%d
+        date: date format %Y-%m-%d
+        since: date format %Y-%m-%d
+        to: date format %Y-%m-%d
         scheme: defoult = jobnlp.db.schemas.MAIN_SCHEME
     '''
     
@@ -84,14 +84,14 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
             log.info(f"fetchall_layer: {since} -> {today} (defoult)")
             where = f"WHERE {d_col} BETWEEN '{since}' AND '{today}'"
 
-    if to and not since:
-        log.warning(("Since `to` was provided but not `since`, only "
-                        "records corresponding to `to` are returned."))
-        where = f"WHERE {d_col}='{to}'"
+        if to and not since:
+            log.warning(("Since `to` was provided but not `since`, only "
+                            "records corresponding to `to` are returned."))
+            where = f"WHERE {d_col}='{to}'"
 
-    elif since and to:
-        log.info(f"fetchall_layer: {since} -> {to}")
-        where = f"WHERE {d_col} BETWEEN '{since}' AND '{to}'"
+        elif since and to:
+            log.info(f"fetchall_layer: {since} -> {to}")
+            where = f"WHERE {d_col} BETWEEN '{since}' AND '{to}'"
 
     else:
         msj="A date must be specified (`date`, or `since` and/or `to`)"
