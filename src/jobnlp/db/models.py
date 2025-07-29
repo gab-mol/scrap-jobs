@@ -55,7 +55,7 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
         date: date format %Y-%m-%d
         since: date format %Y-%m-%d
         to: date format %Y-%m-%d
-        scheme: defoult = jobnlp.db.schemas.MAIN_SCHEME
+        scheme: name. See jobnlp.db.schemas.ALLOWED_SCHEMES
     '''
     
     validate_db_identifiers(scheme, table)
