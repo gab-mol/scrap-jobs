@@ -46,7 +46,8 @@ def insert_silver():
 
 
 def fetchall_layer(table: str, date: str|None=None, since: str|None=None, 
-                   to: str|None=None, scheme="adds_lakehouse"):
+                   to: str|None=None, cols: list[str]|None = None, 
+                   scheme="adds_lakehouse"):
     '''
     Fetch data from the lakehouse.
 
@@ -55,6 +56,7 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
         date: date format %Y-%m-%d
         since: date format %Y-%m-%d
         to: date format %Y-%m-%d
+        cols: select columns. All selected by defoult.
         scheme: name. See jobnlp.db.schemas.ALLOWED_SCHEMES
     '''
     
@@ -98,8 +100,10 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
         log.error("fetchall_layer: "+msj)
         raise ValueError(msj)
     
+    col_sel = "*" if not cols else ", ".join(cols)
+
     query = f"""
-    SELECT * FROM {scheme}.{table}
+    SELECT {col_sel} FROM {scheme}.{table}
     {where};
     """
 
