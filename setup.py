@@ -13,7 +13,8 @@ setup(
     entry_points={
         'console_scripts': [
             'fetch_raw=jobnlp.pipeline.fetch_raw:main',
-            'clean_text=jobnlp.pipeline.clean_text:main'
+            'clean_text=jobnlp.pipeline.clean_text:main',
+            'nlp_extract=jobnlp.pipeline.nlp_extract:main'
         ]
     },
 )
