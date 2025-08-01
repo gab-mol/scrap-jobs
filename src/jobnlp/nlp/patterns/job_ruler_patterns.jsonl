@@ -1,0 +1,578 @@
+[
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "cajero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "cajera"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "mozo"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "moza"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "vendedor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "vendedora"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "encargado"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "encargada"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "carpintero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "bicicletero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "chofer"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "fiambrero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "fiambrera"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "peluquero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "peluquera"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "enfermero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "enfermera"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "supervisor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "pintor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "empleado"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "empleada"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "asesor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "carnicero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "farmacéutico"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "repositor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "kinesiólogo"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "psicólogo"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "tallerista"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "administrativo"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "administrativa"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "lustrador"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "recepcionista"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "operario"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "vigilador"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "albañil"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "soldador"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "plomero"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "electricista"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "gasista"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "repartidor"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "metalúrgico"
+      }
+    ]
+  },
+  {
+    "label": "PUESTO",
+    "pattern": [
+      {
+        "LOWER": "lavadorpersonal"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "supermercado"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "carnicería"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "pizzería"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "limpieza"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "constructora"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "peluquería"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "farmacia"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "maxikioscobicicletería"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "inmobiliaria"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "masculino"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "femenino"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "con moto"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "full time"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "recursos humanoslogística"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "depósito"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "distribución"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "comercial"
+      }
+    ]
+  },
+  {
+    "label": "NEGOCIO",
+    "pattern": [
+      {
+        "LOWER": "lavadero"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "gestión administrativa"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "word"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "excel"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "sistemasdisponibilidad horaria"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "manejo de personal"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "carnet de conducir"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "carnetcon experiencia"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "c/experiencia"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "c/exp"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "experiencia acreditad"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "experiencia comprobable"
+      }
+    ]
+  },
+  {
+    "label": "REQUIS",
+    "pattern": [
+      {
+        "LOWER": "referencias"
+      }
+    ]
+  }
+]
