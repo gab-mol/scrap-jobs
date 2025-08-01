@@ -10,40 +10,42 @@ from jobnlp.utils.logger import Logger
 
 class NLPRules:
     '''
-    Manage models that implement the EntityRuler class for rule-based NLP.  
-    Rules added through this class have priority over entities found by the ner 
-    element.
+    Manage models that implement the EntityRuler class for rule-based NLP.
+    Rules added through this class have priority over entities found 
+    by the ner element.
     '''
-    def __init__(
-            self, nlp: Language,
-            log: Logger,
-            ruler_name: str = "entity_ruler",
+    def __init__(self, log: Logger, nlp: Language|None = None,
             modelpath: Path|None = None):
         '''
-        nlp: SpaCy Language object.
-        ruler_name: EntityRuler component name.
+        log: Logger instance.
+        nlp: SpaCy Language object. If provided, adds an EntityRuler.
+        modelpath: Path to save the model to disk.
         '''
-        self.nlp = nlp
-        self.ruler_name = ruler_name
+        self.ruler_name = "entity_ruler",
         self.ruler: EntityRuler
         self.modelpath = modelpath
         self.log = log
 
+        if nlp:
+            self.add_ruler_pipe(nlp)
+
+    def add_ruler_pipe(self, nlp: Language):
+        self.nlp = nlp
         before_el = "ner"
-        if ruler_name in self.nlp.pipe_names:
-            self.ruler = self.nlp.get_pipe(ruler_name)
+        if self.ruler_name in self.nlp.pipe_names:
+            self.ruler = self.nlp.get_pipe(self.ruler_name)
         else:
             if before_el in self.nlp.pipe_names:
                 # NOTE: ensure priority of rules over ner
                 self.ruler = self.nlp.add_pipe(
-                    ruler_name, 
-                    name=ruler_name, 
+                    self.ruler_name, 
+                    name=self.ruler_name, 
                     before=before_el
                     )
             else:
                 self.ruler = self.nlp.add_pipe(
-                    ruler_name, 
-                    name=ruler_name, 
+                    self.ruler_name, 
+                    name=self.ruler_name, 
                     last=True
                     )
 
@@ -97,7 +99,7 @@ class NLPRules:
         self.modelpath.parent.mkdir(parents=True, exist_ok=True)
         self.nlp.to_disk(self.modelpath)
         self.log.info(f"Model save to {self.modelpath}")
-
+    
     def load_model(self, modelpath: Path|None=None):
         if not modelpath and not self.modelpath:
             self.log.error("Attempted to load model with no route specified.")
