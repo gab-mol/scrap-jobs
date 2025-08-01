@@ -41,9 +41,40 @@ def insert_bronze(add: dict) -> Literal[0, 1]:
         log.error(f"Error inserting record with hash: {add['hash']}")
         raise
 
-def insert_silver():
-    ...
+def insert_silver(add: dict):
+    '''
+    Insert row into table `adds_silver`.
 
+    :Parameter:
+    add: `dict` (Mandatory keys: colnames)   
+        - scrap_date  
+        - source_url  
+        - norm_text  
+        - hash  
+    '''
+    query = """INSERT INTO adds_lakehouse.adds_bronze (scrap_date, entity_text, 
+                        label, start, end, hash)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (hash) DO NOTHING
+                RETURNING id;
+                """
+    try:
+        cur = conn.cursor()
+        cur.execute(query, (
+            add["scrap_date"],
+            add["entity_text"],
+            add["label"],
+            add["start"],
+            add["end"],
+            add["hash"]
+        ))
+        inserted = cur.fetchone()
+        cur.close()
+        conn.commit()
+        return 1 if inserted else 0
+    except OperationalError:
+        log.error(f"Error inserting record with hash: {add['hash']}")
+        raise
 
 def fetchall_layer(table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
