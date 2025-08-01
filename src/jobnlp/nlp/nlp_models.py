@@ -3,6 +3,11 @@ import spacy
 from spacy.language import Language
 from functools import lru_cache
 
+from jobnlp.utils.logger import get_logger
+
+log = get_logger(__name__)
+
+
 class SpacyModel:
     '''
     Factory for SpaCy pre-trained models.
@@ -30,13 +35,25 @@ class SpacyModel:
         size = size or self.default_size
         model_name = self.get_model_name(lang, size)
         try:
+            log.info(f"Load spacy model: '{model_name}'")
             return spacy.load(model_name)
         except OSError:
+            log.error((f"An attempt was made to load the '{model_name}'" 
+                       "model, not installed."))
             raise RuntimeError(
                 (f"Model '{model_name}' not installed. "
                  f"Exec: python -m spacy download {model_name}")
             )
 
+    def get_blank_mod(self, lang: str=None):
+        lang = lang or self.default_lang
+        try:
+            log.info(f"Load spacy model, lang = {lang}")
+            return spacy.blank(lang)        
+        except OSError as e:
+            log.error(f"Error at load '{lang}' blank model")
+            raise e
+            
     @staticmethod
     @lru_cache(maxsize=None)
     def get_model_cached_static(model_name: str) -> Language:
