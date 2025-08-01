@@ -42,19 +42,25 @@ def create_bronze() -> None:
 
 def create_silver() -> None:
     print(NotImplemented)
-    # try:
-    #     with conn.cursor() as cur:
-    #         cur.execute("""
-    #         CREATE TABLE IF NOT EXISTS adds_lakehouse.adds_silver (
-    #             id SERIAL PRIMARY KEY,
-        
-    #         );
-    #         """)
-    #     conn.commit()
-    #     log.info("Table 'adds_silver' created.")
-    # except OperationalError:
-    #     log.error("Unable to create 'adds_silver' table.")
-    #     raise
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS adds_lakehouse.adds_silver (
+                id SERIAL PRIMARY KEY,
+                scrap_date DATE NOT NULL, 
+                entity_text TEXT,
+                label TEXT,
+                start INT,
+                end, INT,
+                hash TEXT,
+                CONSTRAINT unique_hash UNIQUE (hash)
+            );
+            """)
+        conn.commit()
+        log.info("Table 'adds_silver' created.")
+    except OperationalError:
+        log.error("Unable to create 'adds_silver' table.")
+        raise
 
 
 def create_tables() -> None:
