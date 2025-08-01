@@ -8,6 +8,15 @@ from jobnlp.utils.logger import get_logger
 
 log = get_logger(__name__)
 
+class BronzeQueryError(Exception):
+    """Raised when querying the bronze layer fails."""
+    pass
+
+
+class SilverQueryError(Exception):
+    """Raised when querying the silver layer fails."""
+    pass
+
 
 def insert_bronze(add: dict) -> Literal[0, 1]:
     '''
@@ -37,7 +46,7 @@ def insert_bronze(add: dict) -> Literal[0, 1]:
         cur.close()
         conn.commit()
         return 1 if inserted else 0
-    except OperationalError:
+    except BronzeQueryError:
         log.error(f"Error inserting record with hash: {add['hash']}")
         raise
 
@@ -72,7 +81,7 @@ def insert_silver(add: dict):
         cur.close()
         conn.commit()
         return 1 if inserted else 0
-    except OperationalError:
+    except SilverQueryError:
         log.error(f"Error inserting record with hash: {add['hash']}")
         raise
 
