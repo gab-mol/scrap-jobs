@@ -5,9 +5,7 @@ from spacy.language import Language
 from spacy.pipeline import EntityRuler
 from spacy.tokens import Doc
 
-from jobnlp.utils.logger import get_logger
-
-log = get_logger(__name__)
+from jobnlp.utils.logger import Logger
 
 
 class NLPRules:
@@ -17,7 +15,8 @@ class NLPRules:
     element.
     '''
     def __init__(
-            self, nlp: Language, 
+            self, nlp: Language,
+            log: Logger,
             ruler_name: str = "entity_ruler",
             modelpath: Path|None = None):
         '''
@@ -28,6 +27,7 @@ class NLPRules:
         self.ruler_name = ruler_name
         self.ruler: EntityRuler
         self.modelpath = modelpath
+        self.log = log
 
         before_el = "ner"
         if ruler_name in self.nlp.pipe_names:
@@ -63,7 +63,7 @@ class NLPRules:
         with open(rulespath, "w", encoding="utf-8") as f:
             json.dump(self.ruler.patterns, f, ensure_ascii=False, 
                       indent=2)
-        log.info((f"Save file with rules for pipe '{self.ruler_name}': "
+        self.log.info((f"Save file with rules for pipe '{self.ruler_name}': "
                  f"{rulespath}"))
 
     def load_patterns(self, rulespath: Path) -> None:
@@ -71,7 +71,7 @@ class NLPRules:
         Loads rules from a JSON file and adds them to the EntityRuler.
         '''
         if not rulespath.is_file():
-            log.error(("Attempted to load rules from file not found:"
+            self.log.error(("Attempted to load rules from file not found:"
                        f"{rulespath}"))
             raise FileNotFoundError(f"{rulespath} does not exist.")
         
@@ -80,34 +80,34 @@ class NLPRules:
 
         self.add_patterns(patterns)
 
-        log.info((f"Load rules for pipe '{self.ruler_name}' "
+        self.log.info((f"Load rules for pipe '{self.ruler_name}' "
                     f"from file: {rulespath}"))
 
     def save_model(self, modelpath: Path|None=None):
         if not modelpath and not self.modelpath:
-            log.error("Attempted to save model with no route specified.")
+            self.log.error("Attempted to save model with no route specified.")
             raise TypeError
         if modelpath:
             self.modelpath = modelpath
         
         if not self.nlp:
-            log.error("Attempted to save but the NLP model is missing")
+            self.log.error("Attempted to save but the NLP model is missing")
             raise TypeError
         
         self.modelpath.parent.mkdir(parents=True, exist_ok=True)
         self.nlp.to_disk(self.modelpath)
-        log.info(f"Model save to {self.modelpath}")
+        self.log.info(f"Model save to {self.modelpath}")
 
     def load_model(self, modelpath: Path|None=None):
         if not modelpath and not self.modelpath:
-            log.error("Attempted to load model with no route specified.")
+            self.log.error("Attempted to load model with no route specified.")
             raise TypeError
         if modelpath:
             if modelpath.exists():
                 self.modelpath = modelpath
-                log.info(f"Model load from {self.modelpath}")
+                self.log.info(f"Model load from {self.modelpath}")
             else:
-                log.error(("An attempt was made to load a model from a "
+                self.log.error(("An attempt was made to load a model from a "
                           f"directory that was not found: {self.modelpath}."))
                 raise FileNotFoundError
             
