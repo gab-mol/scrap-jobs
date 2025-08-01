@@ -22,7 +22,6 @@ def main():
 
     nlp_rul = NLPRules(nlp, log)
     nlp_rul.load_patterns(PATT_PATH)
-    print("Created")
     nlp_rul.save_model(MOD_RUL_PATH)
 
 if __name__ == "__main__":
