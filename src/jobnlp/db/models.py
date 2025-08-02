@@ -4,9 +4,7 @@ from datetime import datetime
 
 from jobnlp.db.connection import conn
 from jobnlp.db.schemas import validate_db_identifiers
-from jobnlp.utils.logger import get_logger
-
-log = get_logger(__name__)
+from jobnlp.utils.logger import Logger
 
 class BronzeQueryError(Exception):
     """Raised when querying the bronze layer fails."""
@@ -18,7 +16,7 @@ class SilverQueryError(Exception):
     pass
 
 
-def insert_bronze(add: dict) -> Literal[0, 1]:
+def insert_bronze(add: dict, log: Logger|None = None) -> Literal[0, 1]:
     '''
     Insert row into table `adds_bronze`.
 
@@ -47,10 +45,10 @@ def insert_bronze(add: dict) -> Literal[0, 1]:
         conn.commit()
         return 1 if inserted else 0
     except BronzeQueryError:
-        log.error(f"Error inserting record with hash: {add['hash']}")
+        if log: log.error(f"Error inserting record with hash: {add['hash']}")
         raise
 
-def insert_silver(add: dict):
+def insert_silver(add: dict, log: Logger|None = None):
     '''
     Insert row into table `adds_silver`.
 
@@ -82,12 +80,12 @@ def insert_silver(add: dict):
         conn.commit()
         return 1 if inserted else 0
     except SilverQueryError:
-        log.error(f"Error inserting record with hash: {add['hash']}")
+        if log: log.error(f"Error inserting record with hash: {add['hash']}")
         raise
 
 def fetchall_layer(table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
-                   scheme="adds_lakehouse"):
+                   scheme="adds_lakehouse", log: Logger|None = None):
     '''
     Fetch data from the lakehouse.
 
@@ -112,7 +110,7 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
     today = datetime.now().strftime("%Y-%m-%d")
 
     if date:
-        log.info(f"exec fetchall_layer | date: {date} | {scheme}.{table}")
+        if log: log.info(f"exec fetchall_layer | date: {date} | {scheme}.{table}")
         where = f"WHERE {d_col}='{date}'"
 
     elif to or since:
@@ -123,21 +121,21 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
             to = validate_date(to)
 
         if since and not to:
-            log.info(f"fetchall_layer: {since} -> {today} (defoult)")
+            if log: log.info(f"fetchall_layer: {since} -> {today} (defoult)")
             where = f"WHERE {d_col} BETWEEN '{since}' AND '{today}'"
 
         if to and not since:
-            log.warning(("Since `to` was provided but not `since`, only "
+            if log: log.warning(("Since `to` was provided but not `since`, only "
                             "records corresponding to `to` are returned."))
             where = f"WHERE {d_col}='{to}'"
 
         elif since and to:
-            log.info(f"fetchall_layer: {since} -> {to}")
+            if log: log.info(f"fetchall_layer: {since} -> {to}")
             where = f"WHERE {d_col} BETWEEN '{since}' AND '{to}'"
 
     else:
         msj="A date must be specified (`date`, or `since` and/or `to`)"
-        log.error("fetchall_layer: "+msj)
+        if log: log.error("fetchall_layer: "+msj)
         raise ValueError(msj)
     
     col_sel = "*" if not cols else ", ".join(cols)
@@ -151,7 +149,7 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
         try:
             cur.execute(query)
         except OperationalError:
-            log.error(f"Failed to execute: {query}")
+            if log: log.error(f"Failed to execute: {query}")
             raise
         
         res = cur.fetchall()
