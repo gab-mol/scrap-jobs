@@ -17,7 +17,7 @@ class SilverQueryError(Exception):
 
 def insert_bronze(conn, add: dict, log: Logger|None = None) -> Literal[0, 1]:
     '''
-    Insert row into table `adds_bronze`.
+    Insert row into table `ads_bronze`.
 
     :Parameter:
     add: `dict` (Mandatory keys: colnames)   
@@ -26,7 +26,7 @@ def insert_bronze(conn, add: dict, log: Logger|None = None) -> Literal[0, 1]:
         - norm_text  
         - hash  
     '''
-    query = """INSERT INTO adds_lakehouse.adds_bronze (scrap_date, source_url, norm_text, hash)
+    query = """INSERT INTO ads_lakehouse.ads_bronze (scrap_date, source_url, norm_text, hash)
                     VALUES (%s, %s, %s, %s)
                     ON CONFLICT (hash) DO NOTHING
                     RETURNING id;
@@ -50,7 +50,7 @@ def insert_bronze(conn, add: dict, log: Logger|None = None) -> Literal[0, 1]:
 
 def insert_silver(conn, add: dict, log: Logger|None = None):
     '''
-    Insert row into table `adds_silver`.
+    Insert row into table `ads_silver`.
 
     :Parameter:
     add: `dict` (Mandatory keys: colnames)   
@@ -59,7 +59,7 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
         - norm_text  
         - hash  
     '''
-    query = """INSERT INTO adds_lakehouse.adds_silver (scrap_date, entity_text, 
+    query = """INSERT INTO ads_lakehouse.ads_silver (scrap_date, entity_text, 
                         label, start_pos, end_pos, hash)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (hash) DO NOTHING
@@ -86,7 +86,7 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
 
 def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
-                   scheme="adds_lakehouse", log: Logger|None = None):
+                   scheme="ads_lakehouse", log: Logger|None = None):
     '''
     Fetch data from the lakehouse.
 

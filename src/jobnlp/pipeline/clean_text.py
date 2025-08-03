@@ -137,10 +137,10 @@ def main():
         try: 
             load_to_bronze(conn, add_list, log, raw_path)
             log.info((f"Processed: {raw_path.name} -> "
-                      "DB: adds_lakehouse.adds_bronze"))
+                      "DB: bronze layer"))
         except Exception as e:
             log.error((f"Could not save {raw_path.name} to DB: "
-                        "adds_lakehouse.adds_bronze"))
+                        "bronze layer"))
             raise BronzeQueryError from e
         finally:
             conn.close()

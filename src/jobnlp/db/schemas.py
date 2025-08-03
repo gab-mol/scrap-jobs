@@ -4,8 +4,8 @@ from jobnlp.utils.logger import get_logger
 
 log = get_logger(__name__)
 
-ALLOWED_SCHEMES = {"adds_lakehouse"}
-ALLOWED_TABLES = {"adds_bronze", "adds_silver"}
+ALLOWED_SCHEMES = {"ads_lakehouse"}
+ALLOWED_TABLES = {"ads_bronze", "ads_silver"}
 
 def validate_db_identifiers(scheme: str, table: str) -> None:
     if scheme not in ALLOWED_SCHEMES:
@@ -44,7 +44,7 @@ def create_schemas(conn) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("""
-            CREATE SCHEMA IF NOT EXISTS adds_lakehouse;
+            CREATE SCHEMA IF NOT EXISTS ads_lakehouse;
             """)
             conn.commit()
     except Exception as e:
@@ -55,7 +55,7 @@ def create_bronze(conn) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS adds_lakehouse.adds_bronze (
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_bronze (
                 id SERIAL PRIMARY KEY,
                 scrap_date DATE NOT NULL, 
                 source_url TEXT, 
@@ -65,16 +65,16 @@ def create_bronze(conn) -> None:
             );
             """)
         conn.commit()
-        log.info("Table 'adds_bronze' created.")
+        log.info("Table 'ads_bronze' created.")
     except Exception as e:
-        log.error("Unable to create 'adds_bronze' table.")
+        log.error("Unable to create 'ads_bronze' table.")
         raise OperationalError from e
 
 def create_silver(conn) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS adds_lakehouse.adds_silver (
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_silver (
                 id SERIAL PRIMARY KEY,
                 scrap_date DATE NOT NULL, 
                 entity_text TEXT,
@@ -86,24 +86,24 @@ def create_silver(conn) -> None:
             );
             """)
         conn.commit()
-        log.info("Table 'adds_silver' created.")
+        log.info("Table 'ads_silver' created.")
     except Exception as e:
-        log.error("Unable to create 'adds_silver' table.")
+        log.error("Unable to create 'ads_silver' table.")
         raise OperationalError from e
 
 def db_init(conn) -> None:
     '''
     Ensure the existence of schemas and tables.
     '''
-    if not schema_exists(conn, "adds_lakehouse"):
+    if not schema_exists(conn, "ads_lakehouse"):
         create_schemas(conn)
 
-    if not table_exists(conn, "adds_lakehouse", "adds_bronze"):
+    if not table_exists(conn, "ads_lakehouse", "ads_bronze"):
         create_bronze(conn)
     else:
-        log.info("adds_bronze table exist.")
+        log.info("ads_bronze table exist.")
 
-    if not table_exists(conn, "adds_lakehouse", "adds_silver"):
+    if not table_exists(conn, "ads_lakehouse", "ads_silver"):
         create_silver(conn)
     else:
-        log.info("adds_silver table exist.")
+        log.info("ads_silver table exist.")

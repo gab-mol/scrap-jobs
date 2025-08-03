@@ -28,7 +28,7 @@ def load_bronze_adds(conn, date: str|None = None):
         log.info(f"Querying ads scraped on: {date}")
         return fetchall_layer(
             conn,
-            "adds_bronze", 
+            "ads_bronze", 
             since=date,
             cols=["scrap_date, norm_text, hash"])
     except:
