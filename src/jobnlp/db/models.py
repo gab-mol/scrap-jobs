@@ -44,9 +44,10 @@ def insert_bronze(add: dict, log: Logger|None = None) -> Literal[0, 1]:
         cur.close()
         conn.commit()
         return 1 if inserted else 0
-    except BronzeQueryError:
-        if log: log.error(f"Error inserting record with hash: {add['hash']}")
-        raise
+    except Exception as e:
+        if log: log.error(("Error inserting record with hash: "
+                          f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
+        raise BronzeQueryError from e
 
 def insert_silver(add: dict, log: Logger|None = None):
     '''
@@ -79,9 +80,10 @@ def insert_silver(add: dict, log: Logger|None = None):
         cur.close()
         conn.commit()
         return 1 if inserted else 0
-    except SilverQueryError:
-        if log: log.error(f"Error inserting record with hash: {add['hash']}")
-        raise
+    except Exception as e:
+        if log: log.error(("Error inserting record with hash: "
+                          f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
+        raise SilverQueryError from e
 
 def fetchall_layer(table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
@@ -148,9 +150,9 @@ def fetchall_layer(table: str, date: str|None=None, since: str|None=None,
     with conn.cursor() as cur:
         try:
             cur.execute(query)
-        except OperationalError:
+        except Exception as e:
             if log: log.error(f"Failed to execute: {query}")
-            raise
+            raise OperationalError from e
         
         res = cur.fetchall()
         
