@@ -59,8 +59,8 @@ def insert_silver(add: dict, log: Logger|None = None):
         - norm_text  
         - hash  
     '''
-    query = """INSERT INTO adds_lakehouse.adds_bronze (scrap_date, entity_text, 
-                        label, start, end, hash)
+    query = """INSERT INTO adds_lakehouse.adds_silver (scrap_date, entity_text, 
+                        label, start_pos, end_pos, hash)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (hash) DO NOTHING
                 RETURNING id;
@@ -71,8 +71,8 @@ def insert_silver(add: dict, log: Logger|None = None):
             add["scrap_date"],
             add["entity_text"],
             add["label"],
-            add["start"],
-            add["end"],
+            add["start_pos"],
+            add["end_pos"],
             add["hash"]
         ))
         inserted = cur.fetchone()

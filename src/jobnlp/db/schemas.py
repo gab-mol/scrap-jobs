@@ -41,7 +41,6 @@ def create_bronze() -> None:
         raise
 
 def create_silver() -> None:
-    print(NotImplemented)
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -50,10 +49,10 @@ def create_silver() -> None:
                 scrap_date DATE NOT NULL, 
                 entity_text TEXT,
                 label TEXT,
-                start INT,
-                end, INT,
+                start_pos INT,
+                end_pos INT,
                 hash TEXT,
-                CONSTRAINT unique_hash UNIQUE (hash)
+                CONSTRAINT unique_hash_silver UNIQUE (hash)
             );
             """)
         conn.commit()
@@ -62,10 +61,9 @@ def create_silver() -> None:
         log.error("Unable to create 'adds_silver' table.")
         raise
 
-
 def create_tables() -> None:
     create_bronze()
-    # create_silver()
+    create_silver()
 
 def db_init() -> None:
     '''
@@ -80,3 +78,6 @@ def db_init() -> None:
         create_tables()
     except:
         log.error("Error when trying to create tables.")
+
+
+create_silver()
