@@ -2,10 +2,13 @@ from datetime import datetime, date
 from pathlib import Path
 from spacy.language import Language
 from typing import Iterator
+import argparse
+
 import jobnlp
 from jobnlp.db.connection import get_connection
 from jobnlp.db.schemas import db_init
-from jobnlp.db.models import fetchall_layer, insert_silver, SilverQueryError
+from jobnlp.db.models import (fetchall_layer, insert_silver, 
+                              BronzeQueryError, SilverQueryError)
 from jobnlp.nlp.nlp_custom import NLPRules
 from jobnlp.utils.logger import setup_logging, get_logger
 
@@ -22,6 +25,7 @@ def load_bronze_adds(conn, date: str|None = None):
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
+        log.info(f"Querying ads scraped on: {date}")
         return fetchall_layer(
             conn,
             "adds_bronze", 
@@ -60,21 +64,31 @@ def main():
     nlp_rul = NLPRules(log)
     nlp_rul.load_model(MOD_RUL_PATH)
 
+    # date parameter
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--date",
+        type=str,
+        help="Date execution, format: YYYY-MM-DD (default: today)",
+    )
+
+    args = parser.parse_args()
+    date = args.date if args.date else None
 
     conn = get_connection()
     db_init(conn)
 
-    adds_brz = load_bronze_adds()
+    adds_brz = load_bronze_adds(conn, date=date)
     if not adds_brz:
         log.critical("Missing data. Aborting.")
-        return
+        raise BronzeQueryError
         
     extr_gen = extract_ents(nlp_rul.nlp, adds_brz)
 
     inserted_count = 0
     try:
         for rs in extr_gen:
-            res = insert_silver(rs[0], log)
+            res = insert_silver(conn, rs[0], log)
             inserted_count += res
     except Exception as e:
         log.critical("Abort insertion to silver layer.")
