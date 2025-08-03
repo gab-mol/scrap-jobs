@@ -3,8 +3,9 @@ from pathlib import Path
 from spacy.language import Language
 from typing import Iterator
 import jobnlp
+from jobnlp.db.connection import get_connection
 from jobnlp.db.schemas import db_init
-from jobnlp.db.models import fetchall_layer, insert_silver
+from jobnlp.db.models import fetchall_layer, insert_silver, SilverQueryError
 from jobnlp.nlp.nlp_custom import NLPRules
 from jobnlp.utils.logger import setup_logging, get_logger
 
@@ -16,14 +17,15 @@ setup_logging(logfile=LOG_PATH)
 log = get_logger(__name__)
 
 
-def load_bronze_adds(date: str|None = None):
+def load_bronze_adds(conn, date: str|None = None):
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
         return fetchall_layer(
+            conn,
             "adds_bronze", 
-            since="2025-07-16", # date
+            since=date,
             cols=["scrap_date, norm_text, hash"])
     except:
         log.error("Error querying data from the bronze layer")
@@ -54,11 +56,14 @@ def extract_ents(nlp: Language, data:list[tuple]) -> Iterator:
             
         yield ent_rows
     
-
 def main():
     nlp_rul = NLPRules(log)
     nlp_rul.load_model(MOD_RUL_PATH)
-    db_init()
+
+
+    conn = get_connection()
+    db_init(conn)
+
     adds_brz = load_bronze_adds()
     if not adds_brz:
         log.critical("Missing data. Aborting.")
@@ -71,9 +76,11 @@ def main():
         for rs in extr_gen:
             res = insert_silver(rs[0], log)
             inserted_count += res
-    except:
+    except Exception as e:
         log.critical("Abort insertion to silver layer.")
-        return
+        raise SilverQueryError from e
+    finally:
+        conn.close()
     
     if inserted_count < 1:
         log.warning(f"No new ads were inserted to silver")

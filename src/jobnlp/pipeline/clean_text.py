@@ -9,8 +9,9 @@ from pathlib import Path
 
 import jobnlp
 from jobnlp.utils import logger
+from jobnlp.db.connection import get_connection
 from jobnlp.db.schemas import db_init
-from jobnlp.db.models import insert_bronze
+from jobnlp.db.models import insert_bronze, BronzeQueryError
 
 RAW_DIR = pathlib.Path("data/raw")
 BRONZE_DIR = pathlib.Path("data/processed/bronze")
@@ -84,11 +85,11 @@ def process_file(file_path: pathlib.Path) -> list[dict]:
         reader.close()
     return adds_list
 
-def load_to_bronze(add_list: list[dict], 
+def load_to_bronze(conn, add_list: list[dict], 
                    log: logger.Logger, raw_path: Path):
     inserted_count = 0
     for add in add_list:
-        res = insert_bronze(add)
+        res = insert_bronze(conn, add)
         inserted_count += res
     if inserted_count < 1:
         log.warning(f"No new ads were inserted from: {raw_path.name}")
@@ -102,7 +103,8 @@ def main():
     logger.setup_logging(logfile=LOG_PATH)
     log = logger.get_logger(__name__)
     
-    db_init()
+    conn = get_connection()
+    db_init(conn)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -133,12 +135,15 @@ def main():
         add_list = process_file(raw_path)
         
         try: 
-            load_to_bronze(add_list, log, raw_path)
+            load_to_bronze(conn, add_list, log, raw_path)
             log.info((f"Processed: {raw_path.name} -> "
                       "DB: adds_lakehouse.adds_bronze"))
-        except:
+        except Exception as e:
             log.error((f"Could not save {raw_path.name} to DB: "
                         "adds_lakehouse.adds_bronze"))
+            raise BronzeQueryError from e
+        finally:
+            conn.close()
     else:
         log.error(f"{raw_path} not found.")
 

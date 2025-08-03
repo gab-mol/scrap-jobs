@@ -2,7 +2,6 @@ from psycopg2.errors import OperationalError
 from typing import Literal
 from datetime import datetime
 
-from jobnlp.db.connection import conn
 from jobnlp.db.schemas import validate_db_identifiers
 from jobnlp.utils.logger import Logger
 
@@ -16,7 +15,7 @@ class SilverQueryError(Exception):
     pass
 
 
-def insert_bronze(add: dict, log: Logger|None = None) -> Literal[0, 1]:
+def insert_bronze(conn, add: dict, log: Logger|None = None) -> Literal[0, 1]:
     '''
     Insert row into table `adds_bronze`.
 
@@ -49,7 +48,7 @@ def insert_bronze(add: dict, log: Logger|None = None) -> Literal[0, 1]:
                           f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
         raise BronzeQueryError from e
 
-def insert_silver(add: dict, log: Logger|None = None):
+def insert_silver(conn, add: dict, log: Logger|None = None):
     '''
     Insert row into table `adds_silver`.
 
@@ -85,7 +84,7 @@ def insert_silver(add: dict, log: Logger|None = None):
                           f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
         raise SilverQueryError from e
 
-def fetchall_layer(table: str, date: str|None=None, since: str|None=None, 
+def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
                    scheme="adds_lakehouse", log: Logger|None = None):
     '''

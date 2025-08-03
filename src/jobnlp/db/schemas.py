@@ -1,7 +1,6 @@
 from psycopg2.errors import OperationalError
 
 from jobnlp.utils.logger import get_logger
-from jobnlp.db.connection import conn
 
 log = get_logger(__name__)
 
@@ -14,15 +13,45 @@ def validate_db_identifiers(scheme: str, table: str) -> None:
     if table not in ALLOWED_TABLES:
         raise ValueError(f"Table '{table}' is not allowed.")
 
-
-def create_schemas() -> None:
+def schema_exists(conn, schema: str) -> bool:
+    query = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.schemata
+            WHERE schema_name = %s
+        );
+    """
     with conn.cursor() as cur:
-        cur.execute("""
-        CREATE SCHEMA IF NOT EXISTS adds_lakehouse;
-        """)
-        conn.commit()
+        cur.execute(query, (schema,))
+        result = cur.fetchone()[0]
+        return result
 
-def create_bronze() -> None:
+
+def table_exists(conn, schema: str, table: str) -> bool:
+    query = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = %s
+              AND table_name = %s
+        );
+    """
+    with conn.cursor() as cur:
+        cur.execute(query, (schema, table))
+        return cur.fetchone()[0]
+
+def create_schemas(conn) -> None:
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+            CREATE SCHEMA IF NOT EXISTS adds_lakehouse;
+            """)
+            conn.commit()
+    except Exception as e:
+        log.error("Error when trying to create schemas.")
+        raise OperationalError from e
+
+def create_bronze(conn) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -36,11 +65,12 @@ def create_bronze() -> None:
             );
             """)
         conn.commit()
-    except OperationalError:
+        log.info("Table 'adds_bronze' created.")
+    except Exception as e:
         log.error("Unable to create 'adds_bronze' table.")
-        raise
+        raise OperationalError from e
 
-def create_silver() -> None:
+def create_silver(conn) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -57,27 +87,23 @@ def create_silver() -> None:
             """)
         conn.commit()
         log.info("Table 'adds_silver' created.")
-    except OperationalError:
+    except Exception as e:
         log.error("Unable to create 'adds_silver' table.")
-        raise
+        raise OperationalError from e
 
-def create_tables() -> None:
-    create_bronze()
-    create_silver()
-
-def db_init() -> None:
+def db_init(conn) -> None:
     '''
-    Ensure the existence of schemas.
+    Ensure the existence of schemas and tables.
     '''
-    try:
-        create_schemas()
-    except:
-        log.error("Error when trying to create schemas.")
+    if not schema_exists(conn, "adds_lakehouse"):
+        create_schemas(conn)
 
-    try:
-        create_tables()
-    except:
-        log.error("Error when trying to create tables.")
+    if not table_exists(conn, "adds_lakehouse", "adds_bronze"):
+        create_bronze(conn)
+    else:
+        log.info("adds_bronze table exist.")
 
-
-create_silver()
+    if not table_exists(conn, "adds_lakehouse", "adds_silver"):
+        create_silver(conn)
+    else:
+        log.info("adds_silver table exist.")
