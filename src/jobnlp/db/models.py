@@ -15,16 +15,25 @@ class SilverQueryError(Exception):
     pass
 
 
+class GoldQueryError(Exception):
+    """Raised when querying the gold layer fails."""
+    pass
+
+
 def insert_bronze(conn, add: dict, log: Logger|None = None) -> Literal[0, 1]:
     '''
     Insert row into table `ads_bronze`.
 
     :Parameter:
+    conn: psycopg2 connection object.   
+
     add: `dict` (Mandatory keys: colnames)   
         - scrap_date  
         - source_url  
         - norm_text  
         - hash  
+    
+    log: logging object.
     '''
     query = """INSERT INTO ads_lakehouse.ads_bronze (scrap_date, source_url, norm_text, hash)
                     VALUES (%s, %s, %s, %s)
@@ -52,12 +61,16 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
     '''
     Insert row into table `ads_silver`.
 
-    :Parameter:
+    ### Parameters
+    conn: psycopg2 connection object.   
+    
     add: `dict` (Mandatory keys: colnames)   
         - scrap_date  
         - source_url  
         - norm_text  
         - hash  
+    
+    log: logging object.
     '''
     query = """INSERT INTO ads_lakehouse.ads_silver (scrap_date, entity_text, 
                         label, start_pos, end_pos, hash)
@@ -84,6 +97,45 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
                           f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
         raise SilverQueryError from e
 
+def insert_gold(conn, table_name: str,
+                add: dict, log: Logger|None = None):
+    '''
+    Insert row into tables of the gold layer.
+
+    ### Parameters
+    conn: psycopg2 connection object.  
+
+    table_name: Name of the gold layer table to insert into.  
+
+    add: `dict` (Mandatory keys: colnames)  
+        - hash  
+        - scrap_date  
+        - entity_text
+
+    log: logging object.
+    '''
+    query = f"""INSERT INTO ads_lakehouse.{table_name} (hash, scrap_date, 
+                        entity_text)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (hash) DO NOTHING
+                RETURNING id;
+                """
+    try:
+        cur = conn.cursor()
+        cur.execute(query, (
+            add["hash"],
+            add["scrap_date"],
+            add["entity_text"]
+        ))
+        inserted = cur.fetchone()
+        cur.close()
+        conn.commit()
+        return 1 if inserted else 0
+    except Exception as e:
+        if log: log.error(("Error inserting record with hash: "
+                          f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
+        raise GoldQueryError from e
+
 def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
                    scheme="ads_lakehouse", log: Logger|None = None):
@@ -91,12 +143,14 @@ def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None,
     Fetch data from the lakehouse.
 
     Parameters:
+        conn: psycopg2 connection object.  
         table: layer table name (see jobnlp.db.schemas).
         date: date format %Y-%m-%d
         since: date format %Y-%m-%d
         to: date format %Y-%m-%d
         cols: select columns. All selected by defoult.
         scheme: name. See jobnlp.db.schemas.ALLOWED_SCHEMES
+        log: logging object.
     '''
     
     validate_db_identifiers(scheme, table)
