@@ -5,7 +5,8 @@ from jobnlp.utils.logger import get_logger
 log = get_logger(__name__)
 
 ALLOWED_SCHEMES = {"ads_lakehouse"}
-ALLOWED_TABLES = {"ads_bronze", "ads_silver"}
+ALLOWED_TABLES = {"ads_bronze", "ads_silver", "ads_gold_jobs", 
+                  "ads_gold_businesses", "ads_gold_requirements"}
 
 def validate_db_identifiers(scheme: str, table: str) -> None:
     if scheme not in ALLOWED_SCHEMES:
@@ -81,13 +82,54 @@ def create_silver(conn) -> None:
                 label TEXT,
                 start_pos INT,
                 end_pos INT,
-                hash TEXT
+                hash TEXT,
+                CONSTRAINT unique_entry_entity UNIQUE (hash, entity_text)
             );
             """)
         conn.commit()
         log.info("Table 'ads_silver' created.")
     except Exception as e:
         log.error("Unable to create 'ads_silver' table.")
+        raise OperationalError from e
+
+def create_gold(conn):
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_jobs (
+                id SERIAL PRIMARY KEY,
+                hash TEXT,
+                scrap_date DATE,
+                entity_text TEXT,
+                CONSTRAINT unique_job_entry UNIQUE (hash, entity_text)
+            );
+            """
+            )
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_businesses (
+                id SERIAL PRIMARY KEY,
+                hash TEXT,
+                scrap_date DATE,
+                entity_text TEXT,
+                CONSTRAINT unique_busin_entry UNIQUE (hash, entity_text)
+            );
+            """
+            )
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_requirements (
+                id SERIAL PRIMARY KEY,
+                hash TEXT,
+                scrap_date DATE,
+                entity_text TEXT,
+                CONSTRAINT unique_requir_entry UNIQUE (hash, entity_text)
+            );
+            """
+            )
+        conn.commit()
+        log.info(("Tables 'ads_gold_' for jobs | businesses | "
+                 "requirements' created."))
+    except Exception as e:
+        log.error("Unable to create 'ads_gold' tables.")
         raise OperationalError from e
 
 def db_init(conn) -> None:
