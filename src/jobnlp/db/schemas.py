@@ -81,8 +81,7 @@ def create_silver(conn) -> None:
                 label TEXT,
                 start_pos INT,
                 end_pos INT,
-                hash TEXT,
-                CONSTRAINT unique_hash_silver UNIQUE (hash)
+                hash TEXT
             );
             """)
         conn.commit()
