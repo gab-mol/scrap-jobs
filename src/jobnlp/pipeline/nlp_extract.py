@@ -31,7 +31,7 @@ def load_bronze_adds(conn, date: date,
             conn,
             table, 
             date=date_f, schema=schema,
-            cols=["scrap_date, norm_text, hash"],
+            cols=["scrap_date", "norm_text", "hash"],
             log=log)
     except Exception:
         log.error("Error querying data from the bronze layer")
