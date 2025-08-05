@@ -148,3 +148,10 @@ def db_init(conn) -> None:
         create_silver(conn)
     else:
         log.info("ads_silver table exist.")
+
+    gold_tables = ["ads_gold_jobs", "ads_gold_businesses", 
+                   "ads_gold_requirements"]
+
+    if not all(table_exists(conn, "ads_lakehouse", name) 
+               for name in gold_tables):
+        create_gold(conn)
