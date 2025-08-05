@@ -138,7 +138,7 @@ def insert_gold(conn, table_name: str,
 
 def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None, 
                    to: str|None=None, cols: list[str]|None = None, 
-                   scheme="ads_lakehouse", log: Logger|None = None):
+                   schema="ads_lakehouse", log: Logger|None = None):
     '''
     Fetch data from the lakehouse.
 
@@ -153,7 +153,7 @@ def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None,
         log: logging object.
     '''
     
-    validate_db_identifiers(scheme, table)
+    validate_db_identifiers(schema, table)
 
     def validate_date(d):
         try:
@@ -165,7 +165,7 @@ def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None,
     today = datetime.now().strftime("%Y-%m-%d")
 
     if date:
-        if log: log.info(f"exec fetchall_layer | date: {date} | {scheme}.{table}")
+        if log: log.info(f"exec fetchall_layer | date: {date} | {schema}.{table}")
         where = f"WHERE {d_col}='{date}'"
 
     elif to or since:
@@ -196,12 +196,13 @@ def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None,
     col_sel = "*" if not cols else ", ".join(cols)
 
     query = f"""
-    SELECT {col_sel} FROM {scheme}.{table}
+    SELECT {col_sel} FROM {schema}.{table}
     {where};
     """
 
     with conn.cursor() as cur:
         try:
+            print(query)
             cur.execute(query)
         except Exception as e:
             if log: log.error(f"Failed to execute: {query}")
