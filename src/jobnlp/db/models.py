@@ -75,7 +75,7 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
     query = """INSERT INTO ads_lakehouse.ads_silver (scrap_date, entity_text, 
                         label, start_pos, end_pos, hash)
                 VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (hash) DO NOTHING
+                ON CONFLICT (hash, entity_text) DO NOTHING
                 RETURNING id;
                 """
     try:
@@ -202,7 +202,6 @@ def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None,
 
     with conn.cursor() as cur:
         try:
-            print(query)
             cur.execute(query)
         except Exception as e:
             if log: log.error(f"Failed to execute: {query}")
