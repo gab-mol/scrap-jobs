@@ -27,3 +27,18 @@ def parse_date_arg() -> date:
                 "Invalid date format. Use YYYY-MM-DD.") from e
     else:
         return date.today()
+
+def get_exec_date(log, caller_name: str = "") -> date:
+    """
+    Parses date argument and logs execution context.
+    Returns a datetime.date object.
+    """
+    try:
+        exec_date = parse_date_arg()
+        exec_date_f = exec_date.strftime("%Y-%m-%d")
+        log.info((f"Running {caller_name or '__main__'}"
+                 f"for date: {exec_date_f}"))
+        return exec_date
+    except DateFormatError as e:
+        log.error(e)
+        exit(1)
