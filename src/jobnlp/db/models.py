@@ -1,9 +1,28 @@
 from psycopg2.errors import OperationalError
-from typing import Literal
+from typing import Literal, Any
 from datetime import datetime
 
 from jobnlp.db.schemas import validate_db_identifiers
 from jobnlp.utils.logger import Logger
+
+COLS_WHITE_LIST = {"scrap_date", "source_url", "norm_text", "hash",
+                   "entity_text", "label", "start_pos", "end_pos"}
+
+def validate_cols(cols: list[str]) -> None:
+    invalid = [c for c in cols if c not in COLS_WHITE_LIST]
+    if invalid:
+        raise ValueError(f"Invalid column(s): {', '.join(invalid)}")
+    
+def validate_filters(filters: dict[str, Any]) -> None:
+    invalid = [k for k in filters if k not in COLS_WHITE_LIST]
+    if invalid:
+        raise ValueError(f"Invalid filter column(s): {', '.join(invalid)}")
+
+def validate_date(d):
+    try:
+        return datetime.strptime(d, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except Exception:
+        raise ValueError(f"Date '{d}' must be in YYYY-MM-DD format")
 
 class BronzeQueryError(Exception):
     """Raised when querying the bronze layer fails."""
@@ -136,77 +155,97 @@ def insert_gold(conn, table_name: str,
                           f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
         raise GoldQueryError from e
 
-def fetchall_layer(conn, table: str, date: str|None=None, since: str|None=None, 
-                   to: str|None=None, cols: list[str]|None = None, 
-                   schema="ads_lakehouse", log: Logger|None = None):
+def fetchall_layer(
+    conn,
+    table: str,
+    date: str | None = None,
+    since: str | None = None,
+    to: str | None = None,
+    filters: dict[str, Any] | None = None,
+    cols: list[str] | None = None,
+    schema: str = "ads_lakehouse",
+    log: Logger | None = None
+):
     '''
-    Fetch data from the lakehouse.
+    Fetch data from the lakehouse with optional filters.
 
     Parameters:
         conn: psycopg2 connection object.  
-        table: layer table name (see jobnlp.db.schemas).
-        date: date format %Y-%m-%d
-        since: date format %Y-%m-%d
-        to: date format %Y-%m-%d
-        cols: select columns. All selected by defoult.
-        scheme: name. See jobnlp.db.schemas.ALLOWED_SCHEMES
-        log: logging object.
+        table: table name.
+        date: fetch specific date (YYYY-MM-DD).
+        since: fetch records from this date onward.
+        to: fetch records up to this date.
+        filters: dict of filters e.g. {"label": "PUESTO"}
+        cols: list of column names to select.
+        schema: schema name.
+        log: logger.
     '''
-    
     validate_db_identifiers(schema, table)
 
-    def validate_date(d):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d").strftime("%Y-%m-%d")
-        except Exception:
-            raise ValueError(f"Date '{d}' must be in YYYY-MM-DD format")
-    
+    if cols:
+        validate_cols(cols)
+
+    if filters:
+        validate_filters(filters)
+
     d_col = "scrap_date"
     today = datetime.now().strftime("%Y-%m-%d")
 
-    if date:
-        if log: log.info(f"exec fetchall_layer | date: {date} | {schema}.{table}")
-        where = f"WHERE {d_col}='{date}'"
+    where_clauses = []
+    values = []
 
-    elif to or since:
+    # Fecha única
+    if date:
+        date = validate_date(date)
+        where_clauses.append(f"{d_col} = %s")
+        values.append(date)
+
+    # Rango de fechas
+    elif since or to:
         if since:
             since = validate_date(since)
-
         if to:
             to = validate_date(to)
 
-        if since and not to:
-            if log: log.info(f"fetchall_layer: {since} -> {today} (defoult)")
-            where = f"WHERE {d_col} BETWEEN '{since}' AND '{today}'"
-
-        if to and not since:
-            if log: log.warning(("Since `to` was provided but not `since`, only "
-                            "records corresponding to `to` are returned."))
-            where = f"WHERE {d_col}='{to}'"
-
-        elif since and to:
-            if log: log.info(f"fetchall_layer: {since} -> {to}")
-            where = f"WHERE {d_col} BETWEEN '{since}' AND '{to}'"
-
+        if since and to:
+            where_clauses.append(f"{d_col} BETWEEN %s AND %s")
+            values.extend([since, to])
+        elif since:
+            where_clauses.append(f"{d_col} BETWEEN %s AND %s")
+            values.extend([since, today])
+        elif to:
+            where_clauses.append(f"{d_col} = %s")
+            values.append(to)
     else:
-        msj="A date must be specified (`date`, or `since` and/or `to`)"
-        if log: log.error("fetchall_layer: "+msj)
-        raise ValueError(msj)
-    
-    col_sel = "*" if not cols else ", ".join(cols)
+        raise ValueError("Must specify `date` or `since`/`to`.")
+
+    if filters:
+        for col, val in filters.items():
+            if not isinstance(col, str):
+                raise ValueError("Filter keys must be column names (str)")
+            where_clauses.append(f"{col} = %s")
+            values.append(val)
+
+    col_sel = "*"
+    if cols:
+        col_sel = ", ".join(cols)
+
+    where_clause = " AND ".join(where_clauses)
 
     query = f"""
-    SELECT {col_sel} FROM {schema}.{table}
-    {where};
+        SELECT {col_sel}
+        FROM {schema}.{table}
+        WHERE {where_clause};
     """
+
+    if log:
+        log.info(f"Executing query on {schema}.{table} | Filters: {filters} | Dates: {date or (since, to)}")
 
     with conn.cursor() as cur:
         try:
-            cur.execute(query)
+            cur.execute(query, tuple(values))
+            return cur.fetchall()
         except Exception as e:
-            if log: log.error(f"Failed to execute: {query}")
+            if log:
+                log.error(f"Query failed: {query.strip()} | Args: {values}")
             raise OperationalError from e
-        
-        res = cur.fetchall()
-        
-    return res if res else None
