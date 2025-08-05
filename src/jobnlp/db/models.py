@@ -175,7 +175,7 @@ def fetchall_layer(
         date: fetch specific date (YYYY-MM-DD).
         since: fetch records from this date onward.
         to: fetch records up to this date.
-        filters: dict of filters e.g. {"label": "PUESTO"}
+        filters: dict of filters e.g. {"col": "value"}
         cols: list of column names to select.
         schema: schema name.
         log: logger.
