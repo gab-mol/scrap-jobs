@@ -8,7 +8,7 @@ import argparse, json
 from pathlib import Path
 
 import jobnlp
-from jobnlp.utils import logger
+from jobnlp.utils import logger, date_arg
 from jobnlp.db.connection import get_connection
 from jobnlp.db.schemas import db_init
 from jobnlp.db.models import insert_bronze, BronzeQueryError
@@ -106,29 +106,10 @@ def main():
     conn = get_connection()
     db_init(conn)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--date",
-        type=str,
-        help="Date execution, format: YYYY-MM-DD (default: today)",
-    )
-    
-    # date parameter for target file selection
-    args = parser.parse_args()
-
-    if args.date:
-        try:
-            run_date = datetime.strptime(args.date, "%Y-%m-%d").date()
-            log.info(f"Executing clean_text task for: {run_date}")
-        except ValueError as e:
-            raise e("Invalid. Use format: YYYY-MM-DD.")
-    else:
-        log.info("defoult clean_text task execution (date: today)")
-        run_date = datetime.today().date()
-
-    ds_nodash = run_date.strftime("%Y%m%d")
-
-    raw_path = pathlib.Path(f"data/raw/NewsPapAds_{ds_nodash}.jsonl.gz")
+    # date parameter
+    run_date = date_arg.get_exec_date(log)
+    run_date_f = run_date.strftime("%Y%m%d")
+    raw_path = pathlib.Path(f"data/raw/NewsPapAds_{run_date_f}.jsonl.gz")
 
     if raw_path.exists():
         log.info(f"Processing file: {raw_path}")
