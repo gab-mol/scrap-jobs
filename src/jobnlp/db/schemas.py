@@ -1,14 +1,21 @@
 from psycopg2.errors import OperationalError
+from psycopg2 import sql
+import re
 
 from jobnlp.utils.logger import get_logger
+from jobnlp.utils import read_labels
 
 log = get_logger(__name__)
 
 ALLOWED_SCHEMES = {"ads_lakehouse"}
-ALLOWED_TABLES = {"ads_bronze", "ads_silver", "ads_gold_jobs", 
-                  "ads_gold_businesses", "ads_gold_requirements"}
+ALLOWED_TABLES = {"ads_bronze", "ads_silver"}
 
 def validate_db_identifiers(scheme: str, table: str) -> None:
+    """
+    NOTE: for bronze and silver layers. The gold layer 
+    is validated separately because its tables are named and 
+    generated dynamically.
+    """
     if scheme not in ALLOWED_SCHEMES:
         raise ValueError(f"Scheme '{scheme}' is not allowed.")
     if table not in ALLOWED_TABLES:
@@ -92,45 +99,35 @@ def create_silver(conn) -> None:
         log.error("Unable to create 'ads_silver' table.")
         raise OperationalError from e
 
-def create_gold(conn):
+def safe_label_to_gold_table(label: str) -> str:
+    label_clean = re.sub(r'\W+', '_', label.lower())
+    return f"ads_lakehouse.ads_gold_{label_clean}"
+
+def create_gold_tables_from_labels(conn, tbl_names: set[str]):
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_jobs (
-                id SERIAL PRIMARY KEY,
-                hash TEXT,
-                scrap_date DATE,
-                entity_text TEXT,
-                CONSTRAINT unique_job_entry UNIQUE (hash, entity_text)
-            );
-            """
-            )
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_businesses (
-                id SERIAL PRIMARY KEY,
-                hash TEXT,
-                scrap_date DATE,
-                entity_text TEXT,
-                CONSTRAINT unique_busin_entry UNIQUE (hash, entity_text)
-            );
-            """
-            )
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold_requirements (
-                id SERIAL PRIMARY KEY,
-                hash TEXT,
-                scrap_date DATE,
-                entity_text TEXT,
-                CONSTRAINT unique_requir_entry UNIQUE (hash, entity_text)
-            );
-            """
-            )
+            for name in tbl_names:
+                constraint = f"unique_{name.lower()}_entry"
+                cur.execute(
+                    sql.SQL("""
+                        CREATE TABLE IF NOT EXISTS {} (
+                            id SERIAL PRIMARY KEY,
+                            hash TEXT,
+                            scrap_date DATE,
+                            entity_text TEXT,
+                            CONSTRAINT {} UNIQUE (hash, entity_text)
+                        );
+                    """).format(
+                        sql.Identifier(name),
+                        sql.Identifier(constraint)
+                    )
+                )
         conn.commit()
-        log.info(("Tables 'ads_gold_' for jobs | businesses | "
-                 "requirements' created."))
+        log.info("Gold tables created dynamically for labels.")
     except Exception as e:
-        log.error("Unable to create 'ads_gold' tables.")
+        log.error("Unable to create 'ads_gold_*' tables dynamically.")
         raise OperationalError from e
+
 
 def db_init(conn) -> None:
     '''
@@ -149,9 +146,9 @@ def db_init(conn) -> None:
     else:
         log.info("ads_silver table exist.")
 
-    gold_tables = ["ads_gold_jobs", "ads_gold_businesses", 
-                   "ads_gold_requirements"]
+    labels = read_labels.get_labels_from_rules_json()
+    gold_tables = {safe_label_to_gold_table(label) for label in labels}
 
     if not all(table_exists(conn, "ads_lakehouse", name) 
                for name in gold_tables):
-        create_gold(conn)
+        create_gold_tables_from_labels(conn, gold_tables)
