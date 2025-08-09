@@ -104,6 +104,10 @@ def safe_label_to_gold_table(label: str) -> str:
     return f"ads_lakehouse.ads_gold_{label_clean}"
 
 def create_gold_tables_from_labels(conn, tbl_names: set[str]):
+    """
+    ## Discarded idea, 
+    of segregating by entity label in different tables
+    """
     try:
         with conn.cursor() as cur:
             for name in tbl_names:
@@ -128,6 +132,24 @@ def create_gold_tables_from_labels(conn, tbl_names: set[str]):
         log.error("Unable to create 'ads_gold_*' tables dynamically.")
         raise OperationalError from e
 
+def create_gold(conn):
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS ads_lakehouse.ads_gold (
+                id SERIAL PRIMARY KEY,
+                entity_text TEXT,
+                label TEXT,
+                count INT,
+                count_ads INT,
+                scrap_date DATE NOT NULL
+            );
+            """)
+        conn.commit()
+        log.info("Table 'ads_gold' created.")
+    except Exception as e:
+        log.error("Unable to create 'ads_gold' table.")
+        raise OperationalError from e
 
 def db_init(conn) -> None:
     '''
@@ -146,9 +168,7 @@ def db_init(conn) -> None:
     else:
         log.info("ads_silver table exist.")
 
-    labels = read_labels.get_labels_from_rules_json()
-    gold_tables = {safe_label_to_gold_table(label) for label in labels}
-
-    if not all(table_exists(conn, "ads_lakehouse", name) 
-               for name in gold_tables):
-        create_gold_tables_from_labels(conn, gold_tables)
+    if not table_exists(conn, "ads_lakehouse", "ads_gold"):
+        create_gold(conn)
+    else:
+        log.info("ads_gold table exist.")
