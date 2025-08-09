@@ -1,6 +1,6 @@
 from psycopg2.errors import OperationalError
-from typing import Literal, Any
-from datetime import datetime
+from typing import Literal, Any, Optional
+from datetime import datetime, date
 
 from jobnlp.db.schemas import validate_db_identifiers
 from jobnlp.utils.logger import Logger
@@ -116,10 +116,12 @@ def insert_silver(conn, add: dict, log: Logger|None = None):
                           f"{add.get('hash', '?')}. {type(e).__name__}: {e}"))
         raise SilverQueryError from e
 
-def insert_gold(conn, table_name: str,
+def insert_gold_disc(conn, table_name: str,
                 add: dict, log: Logger|None = None):
     '''
-    Insert row into tables of the gold layer.
+    ## Discarded idea,
+    of segregating by entity label in different tables.
+    -- insert
 
     ### Parameters
     conn: psycopg2 connection object.  
@@ -194,13 +196,11 @@ def fetchall_layer(
     where_clauses = []
     values = []
 
-    # Fecha única
     if date:
         date = validate_date(date)
         where_clauses.append(f"{d_col} = %s")
         values.append(date)
 
-    # Rango de fechas
     elif since or to:
         if since:
             since = validate_date(since)
@@ -249,3 +249,92 @@ def fetchall_layer(
             if log:
                 log.error(f"Query failed: {query.strip()} | Args: {values}")
             raise OperationalError from e
+
+def agreg_from_silver(conn, *,
+                      date_eq: Optional[date] = None,
+                      since: Optional[date] = None,
+                      to: Optional[date] = None,
+                      label: Optional[str] = None,
+                      log=None):
+    """
+    Returns aggregates by entity_text (+ label) for a date or range.
+
+    #### Parameters
+    date_eq: Filters by an exact date.  
+    since/to: Filters by range [since,to] (if only since, use since..today).  
+    label: Optional, filters by label.  
+    log: logging.
+    """
+    if not (date_eq or since or to):
+        raise ValueError("Provide date_eq or since/to")
+
+    where_clauses = []
+    params = []
+
+    if date_eq:
+        where_clauses.append("scrap_date = %s")
+        params.append(date_eq)
+
+    else:
+        if since and to:
+            where_clauses.append("scrap_date BETWEEN %s AND %s")
+            params.extend([since, to])
+        elif since and not to:
+            today = datetime.date.today()
+            where_clauses.append("scrap_date BETWEEN %s AND %s")
+            params.extend([since, today])
+        elif to and not since:
+            where_clauses.append("scrap_date = %s")
+            params.append(to)
+
+    if label:
+        where_clauses.append("label = %s")
+        params.append(label)
+
+    # Construir query
+    where_sql = " AND ".join(where_clauses)
+    query = f"""
+        SELECT entity_text,
+               label,
+               COUNT(*) AS count,
+               COUNT(DISTINCT hash) AS count_ads,
+               scrap_date
+        FROM ads_lakehouse.ads_silver
+        WHERE {where_sql}
+        GROUP BY entity_text, label, scrap_date
+        ORDER BY count DESC;
+    """
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+            cols = [d[0] for d in cur.description]
+            return [dict(zip(cols, r)) for r in rows]
+    except Exception as e:
+        if log: log.error("Error querying silver layer: %s", e)
+        raise OperationalError from e
+    
+def insert_gold(conn, add: dict, log: Logger):
+    query = """
+        INSERT INTO ads_lakehouse.ads_gold
+        (entity_text, label, count, count_ads, scrap_date)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    try:
+        cur = conn.cursor()
+        cur.execute(query, (
+            add["entity_text"],
+            add["label"],
+            add["count"],
+            add["count_ads"],
+            add["scrap_date"].strftime("%Y-%m-%d")
+        ))
+        conn.commit()
+        cur.close()
+        return 1
+    except Exception as e:
+        if log:
+            log.error(("Error inserting into gold layer for: "
+                      f"{add.get('scrap_date')}"))
+        raise GoldQueryError from e
