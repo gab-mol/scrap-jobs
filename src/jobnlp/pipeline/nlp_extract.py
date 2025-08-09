@@ -49,9 +49,8 @@ def extract_ents(nlp: Language, data:list[tuple]) -> Iterator:
         if not ents:
             continue
 
-        ent_rows = list()
         for ent in ents:
-            ent_rows.append({
+            yield {
                 "scrap_date": row[0],
                 "entity_text": ent.text,
                 "label": ent.label_, 
@@ -59,9 +58,6 @@ def extract_ents(nlp: Language, data:list[tuple]) -> Iterator:
                 "end_pos": ent.end_char,
                 "hash": row[2]
             }
-        )
-            
-        yield ent_rows
     
 def main():
     nlp_rul = NLPRules(log)
@@ -84,7 +80,7 @@ def main():
     inserted_count = 0
     try:
         for rs in extr_gen:
-            res = insert_silver(conn, rs[0], log)
+            res = insert_silver(conn, rs, log)
             inserted_count += res
     except Exception as e:
         log.critical("Abort insertion to silver layer.")
