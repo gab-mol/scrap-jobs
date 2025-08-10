@@ -291,7 +291,6 @@ def agreg_from_silver(conn, *,
         where_clauses.append("label = %s")
         params.append(label)
 
-    # Construir query
     where_sql = " AND ".join(where_clauses)
     query = f"""
         SELECT entity_text,
@@ -320,6 +319,11 @@ def insert_gold(conn, add: dict, log: Logger):
         INSERT INTO ads_lakehouse.ads_gold
         (entity_text, label, count, count_ads, scrap_date)
         VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (scrap_date, entity_text)
+        DO UPDATE SET
+            count = EXCLUDED.count,
+            count_ads = EXCLUDED.count_ads,
+            label = EXCLUDED.label;
     """
     try:
         cur = conn.cursor()

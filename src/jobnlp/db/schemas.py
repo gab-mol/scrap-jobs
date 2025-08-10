@@ -142,7 +142,9 @@ def create_gold(conn):
                 label TEXT,
                 count INT,
                 count_ads INT,
-                scrap_date DATE NOT NULL
+                scrap_date DATE NOT NULL,
+                CONSTRAINT unique_ent_txt_date UNIQUE 
+                        (scrap_date, entity_text) 
             );
             """)
         conn.commit()
@@ -157,18 +159,22 @@ def db_init(conn) -> None:
     '''
     if not schema_exists(conn, "ads_lakehouse"):
         create_schemas(conn)
+        log.info("Schema: 'ads_lakehouse' created.")
 
     if not table_exists(conn, "ads_lakehouse", "ads_bronze"):
         create_bronze(conn)
+        log.info("Table: 'ads_bronze' created.")
     else:
         log.info("ads_bronze table exist.")
 
     if not table_exists(conn, "ads_lakehouse", "ads_silver"):
         create_silver(conn)
+        log.info("Table: 'ads_silver' created.")
     else:
         log.info("ads_silver table exist.")
 
     if not table_exists(conn, "ads_lakehouse", "ads_gold"):
         create_gold(conn)
+        log.info("Table: 'ads_gold' created.")
     else:
         log.info("ads_gold table exist.")
