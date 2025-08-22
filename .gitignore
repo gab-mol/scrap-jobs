@@ -7,3 +7,5 @@ tests/
 models/
 .env*
 notes*
+airflow/config
+airflow/logs
