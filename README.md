@@ -18,15 +18,15 @@ A modular data pipeline for scraping, cleaning, and storing online job advertise
 1. ☑ Web scraping and preprocessing (raw layer)
 2. ☑ Deduplication logic
 3. ☑ Basic Docker support
-4. ☐ Airflow orchestration (coming soon)
-5. ☐ Enrichment and feature engineering (silver layer)
-6. ☐ NLP-based classification and analysis
+4. ☑ Extracting named entities from ads using spacy's NLP model and rules
+5. ☐ Airflow orchestration
+6. ☐ Example of data visualization with Dash
 
 ## Configuration and use
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Docker
 - Python 3.11+
 
 ### Run locally
@@ -56,16 +56,36 @@ docker compose --env-file .env -f docker/docker-compose.dev.yml up
 ```
 
 #### Available CLI tasks
+> Tip: Run the tasks inside the Python virtual environment where `jobnlp` is installed.
 
 | Task        | Description                                | Entry point                          |
 |-------------|--------------------------------------------|--------------------------------------|
 | `fetch_raw` | Scrape job ads and store in raw layer      | `jobnlp.pipeline.fetch_raw:main`     |
 | `clean_text`| Preprocess and normalize, store in bronze  | `jobnlp.pipeline.clean_text:main`    |
+| `nlp_extract`| Tokenization and named entity extraction  | `jobnlp.pipeline.nlp_extract:main`   |
+| `entity_count`| count of stored entities by date and ad  | `jobnlp.pipeline.entity_count:main`  |
 
-#### Orchestration with Airflow
+### Orchestration with Airflow
 
-Airflow DAGs for this pipeline are currently under development and will allow scheduled, repeatable execution of all steps, from data collection to enrichment.
+Airflow *DAGs for this pipeline are currently under development* and will allow scheduled, repeatable execution of all steps, fro2m data collection to enrichment.
 
+#### Airflow configuration
+Create `airflow/config/.env` with:
+
+```env
+AIRFLOW_UID=50000
+AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS=user:admin
+```
+Set the password for this user in `airflow/config/simple_auth_passwords.json`:
+
+```json
+{"user" : "password"}
+```
+
+Start with:
+```bash
+docker compose --env-file airflow/config/.env -f airflow/docker-compose.yaml up -d
+```
 
 ## Ethical note
 This project uses a custom `User-Agent` header during scraping:
