@@ -69,27 +69,35 @@ docker compose --env-file docker/.db.env -f docker/docker-compose-db.yaml up
 
 Airflow *DAGs for this pipeline are currently under development* and will allow scheduled, repeatable execution of all steps, fro2m data collection to enrichment.
 
-#### Airflow configuration
-Create `airflow/config/.env` with:
+#### Airflow setup
+
+Create the required sub-directories inside `airflow/`:
+```bash
+mkdir -p ./airflow/{logs,dags,plugins,config}
+```
+Create the environment file at `airflow/config/.airflow.env`:
 
 ```env
-AIRFLOW_UID=50000
+AIRFLOW_UID=$(id -u)
 AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS=user:admin
 AIRFLOW_PROJ_DIR=/path/to/proyect
 JWT_SECRET="rIyQnG8nGGAbCfwNZac6aQ=="
 FERNET_KEY="rQdow8Su_9nWTcS7QSPpkEzjtzt5PvGDuOLldGVVpCU="
 ```
-Generate secure keys for `JWT_SECRET` and `FERNET_KEY`.
+>**Important**: Generate your own secure values for`JWT_SECRET` and `FERNET_KEY`.
 
 Buid the Airflow image:
 ```bash
 docker build -f docker/Dockerfile.airflow .
 ```
-Start with:
+Start Airflow with Docker Compose:
 ```bash
 docker compose --env-file airflow/config/.airflow.env -f docker/docker-compose.yaml up -d
 ```
-The password for the user names define in `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` will be store in `airflow/config/simple_auth_passwords.json`:
+The password for the users defined in `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` will be stored in:
+```
+airflow/config/simple_auth_passwords.json
+```
 
 ## Ethical note
 This project uses a custom `User-Agent` header during scraping:
