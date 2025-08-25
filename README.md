@@ -40,7 +40,7 @@ pip install -r requirements.txt
 pip install -e src/
 ```
 
-Make sure a `.env` file is present in the project root (`./.env`) with the following variables:
+Make sure a `docker/.db.env` file is present with the following variables:
 
 ```env
 POSTGRES_USER=
@@ -52,7 +52,7 @@ POSTGRES_PORT=
 To start the PostgreSQL service via Docker:
 
 ```bash
-docker compose --env-file .env -f docker/docker-compose.dev.yml up
+docker compose --env-file docker/.db.env -f docker/docker-compose-db.yaml up
 ```
 
 #### Available CLI tasks
@@ -75,17 +75,21 @@ Create `airflow/config/.env` with:
 ```env
 AIRFLOW_UID=50000
 AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS=user:admin
+AIRFLOW_PROJ_DIR=/path/to/proyect
+JWT_SECRET="rIyQnG8nGGAbCfwNZac6aQ=="
+FERNET_KEY="rQdow8Su_9nWTcS7QSPpkEzjtzt5PvGDuOLldGVVpCU="
 ```
-Set the password for this user in `airflow/config/simple_auth_passwords.json`:
+Generate secure keys for `JWT_SECRET` and `FERNET_KEY`.
 
-```json
-{"user" : "password"}
+Buid the Airflow image:
+```bash
+docker build -f docker/Dockerfile.airflow .
 ```
-
 Start with:
 ```bash
-docker compose --env-file airflow/config/.env -f airflow/docker-compose.yaml up -d
+docker compose --env-file airflow/config/.airflow.env -f docker/docker-compose.yaml up -d
 ```
+The password for the user names define in `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` will be store in `airflow/config/simple_auth_passwords.json`:
 
 ## Ethical note
 This project uses a custom `User-Agent` header during scraping:
