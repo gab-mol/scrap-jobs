@@ -5,7 +5,7 @@ log/
 *.egg-info/
 tests/
 models/
-.env*
+*.env
 notes*
 airflow/config
 airflow/logs
