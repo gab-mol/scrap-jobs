@@ -13,7 +13,7 @@ with DAG(
     dag_id='jobnlp_pipeline_python',
     default_args=default_args,
     description='Pipeline diario con PythonOperator',
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2025, 8, 13),
     catchup=False,
 ) as dag:
