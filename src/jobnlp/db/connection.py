@@ -2,9 +2,6 @@ import os, psycopg2
 from dotenv import load_dotenv
 import pathlib
 
-import jobnlp
-
-DIR = pathlib.Path(jobnlp.__file__).parent
 ENV_PATH = pathlib.Path("docker/.db.env")
 
 load_dotenv(ENV_PATH)
