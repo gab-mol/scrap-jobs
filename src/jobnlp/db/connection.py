@@ -1,7 +1,13 @@
 import os, psycopg2
 from dotenv import load_dotenv
+import pathlib
 
-load_dotenv()
+import jobnlp
+
+DIR = pathlib.Path(jobnlp.__file__).parent
+ENV_PATH = pathlib.Path("docker/.db.env")
+
+load_dotenv(ENV_PATH)
 
 def get_connection():
     return psycopg2.connect(
