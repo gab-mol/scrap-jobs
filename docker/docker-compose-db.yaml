@@ -11,9 +11,9 @@ services:
     volumes:
       - ../data/processed/postgresdata:/var/lib/postgresql/data
     networks:
-      - docker_jobsnlpnet
+      - jobsnlpnet
 
 networks:
-  docker_jobsnlpnet:
+  jobsnlpnet:
     driver: bridge
     external: true
