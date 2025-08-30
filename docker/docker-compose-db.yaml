@@ -16,3 +16,4 @@ services:
 networks:
   docker_jobsnlpnet:
     driver: bridge
+    external: true
