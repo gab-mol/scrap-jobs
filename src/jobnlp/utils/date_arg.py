@@ -28,6 +28,13 @@ def parse_date_arg() -> date:
     else:
         return date.today()
 
+
+def today():
+    """
+    `datetime.date.today` wrapper.
+    """
+    return date.today()
+
 def get_exec_date(log, caller_name: str = "") -> date:
     """
     Parses date argument and logs execution context.
