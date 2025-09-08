@@ -52,7 +52,8 @@ POSTGRES_PORT=
 To start the PostgreSQL service via Docker:
 
 ```bash
-docker compose --env-file docker/.db.env -f docker/docker-compose-db.yaml up
+docker network create jobsnlpnet
+docker compose --env-file config/.db.env -f docker/docker-compose-db.yaml up
 ```
 
 #### Available CLI tasks
@@ -88,11 +89,23 @@ FERNET_KEY="rQdow8Su_9nWTcS7QSPpkEzjtzt5PvGDuOLldGVVpCU="
 
 Buid the Airflow image:
 ```bash
-docker build -f docker/Dockerfile.airflow .
+docker build -f docker/airflow.Dockerfile .
 ```
+As specified in the [documentation](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html) initialize and migrate the Airflow database with:
+
+```bash
+docker compose --env-file docker/.airflow.env -f docker/docker-compose-airflow.yaml up airflow-init
+```
+then:
+
+```bash
+docker exec -it <airflow-apiserver-ID> bash
+airflow db migrate
+```
+
 Start Airflow with Docker Compose:
 ```bash
-docker compose --env-file airflow/config/.airflow.env -f docker/docker-compose.yaml up -d
+docker compose --env-file config/.airflow.env -f docker/docker-compose.yaml up -d
 ```
 The password for the users defined in `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` will be stored in:
 ```
