@@ -1,22 +1,18 @@
 import jsonlines, gzip
-import pandas as pd
 import pathlib
 import re, hashlib
 from bs4 import BeautifulSoup
-from datetime import datetime
-import argparse, json
-from pathlib import Path
+import json
 
 import jobnlp
 from jobnlp.utils import logger, date_arg
-from jobnlp.db.connection import get_connection
-from jobnlp.db.schemas import db_init
 from jobnlp.db.models import insert_bronze, BronzeQueryError
+from jobnlp.pipeline.base import PipeInit
 
 RAW_DIR = pathlib.Path("data/raw")
 BRONZE_DIR = pathlib.Path("data/processed/bronze")
 BRONZE_DIR.mkdir(parents=True, exist_ok=True)
-PATTERNS_PATH = Path(jobnlp.__file__).parent / "utils" / "clean_patterns.json"
+PATTERNS_PATH = pathlib.Path(jobnlp.__file__).parent / "utils" / "clean_patterns.json"
 
 try:
     with open(PATTERNS_PATH, "r", encoding="utf-8") as f:
@@ -86,7 +82,7 @@ def process_file(file_path: pathlib.Path) -> list[dict]:
     return adds_list
 
 def load_to_bronze(conn, add_list: list[dict], 
-                   log: logger.Logger, raw_path: Path):
+                   log: logger.Logger, raw_path: pathlib.Path):
     inserted_count = 0
     for add in add_list:
         res = insert_bronze(conn, add)
@@ -97,36 +93,53 @@ def load_to_bronze(conn, add_list: list[dict],
         log.info((f"{inserted_count} new ads were inserted from:"
                   f"{raw_path.name}"))
 
-def main():
 
-    LOG_PATH = pathlib.Path("log/clean_text.log")
-    logger.setup_logging(logfile=LOG_PATH)
-    log = logger.get_logger(__name__)
-    
-    conn = get_connection()
-    db_init(conn)
-
-    # date parameter
-    run_date = date_arg.get_exec_date(log)
-    run_date_f = run_date.strftime("%Y%m%d")
-    raw_path = pathlib.Path(f"data/raw/NewsPapAds_{run_date_f}.jsonl.gz")
-
+def tranf_load(init: PipeInit, raw_path: pathlib.Path):
+    """
+    Preliminary cleaning transformations and loading to bronze layer.
+    """
     if raw_path.exists():
-        log.info(f"Processing file: {raw_path}")
+        init.log.info(f"Processing file: {raw_path}")
         add_list = process_file(raw_path)
         
         try: 
-            load_to_bronze(conn, add_list, log, raw_path)
-            log.info((f"Processed: {raw_path.name} -> "
+            load_to_bronze(init.conn, add_list, init.log, raw_path)
+            init.log.info((f"Processed: {raw_path.name} -> "
                       "DB: bronze layer"))
         except Exception as e:
-            log.error((f"Could not save {raw_path.name} to DB: "
+            init.log.error((f"Could not save {raw_path.name} to DB: "
                         "bronze layer"))
             raise BronzeQueryError from e
         finally:
-            conn.close()
+            init.conn.close()
     else:
-        log.error(f"{raw_path} not found.")
+        init.log.error(f"{raw_path} not found.")
+
+def air_schedule():
+    """
+    Entry point for Airflow's DAG.
+    The pipeline must be fully executed by each execution date.
+    """
+    init = PipeInit()
+    run_date = date_arg.today()
+    run_date_f = run_date.strftime("%Y%m%d")
+    raw_path = pathlib.Path(f"data/raw/NewsPapAds_{run_date_f}.jsonl.gz")
+
+    tranf_load(init, raw_path)
+
+def main():
+    """
+    Entry point for `console_scripts` in `setup.py`. 
+    Allows you to enter the date of the file in `/raw` to be read.
+    """
+    init = PipeInit()
+
+    # date parameter
+    run_date = date_arg.get_exec_date(init.log)
+    run_date_f = run_date.strftime("%Y%m%d")
+    raw_path = pathlib.Path(f"data/raw/NewsPapAds_{run_date_f}.jsonl.gz")
+
+    tranf_load(init, raw_path)
 
 if __name__ == "__main__":
 
