@@ -4,23 +4,17 @@ from spacy.language import Language
 from typing import Iterator
 
 import jobnlp
-from jobnlp.db.connection import get_connection
-from jobnlp.db.schemas import db_init, validate_db_identifiers
+from jobnlp.db.schemas import validate_db_identifiers
 from jobnlp.db.models import (fetchall_layer, insert_silver, 
                               BronzeQueryError, SilverQueryError)
 from jobnlp.nlp.nlp_custom import NLPRules
-from jobnlp.utils.logger import setup_logging, get_logger
-from jobnlp.utils.date_arg import get_exec_date
+from jobnlp.utils.date_arg import get_exec_date, today
+from jobnlp.pipeline.base import PipeInit
 
 DIR = Path(jobnlp.__file__).parent
 MOD_RUL_PATH = DIR / "nlp" / "models" / "rules_es"
-LOG_PATH = Path("log/nlp_extract.log")
 
-setup_logging(logfile=LOG_PATH)
-log = get_logger(__name__)
-
-
-def load_bronze_adds(conn, date: date, 
+def load_bronze_adds(conn, date: date, log,
             table="ads_bronze", schema="ads_lakehouse"):
 
     validate_db_identifiers(schema, table)
@@ -58,21 +52,14 @@ def extract_ents(nlp: Language, data:list[tuple]) -> Iterator:
                 "end_pos": ent.end_char,
                 "hash": row[2]
             }
-    
-def main():
-    nlp_rul = NLPRules(log)
-    nlp_rul.load_model(MOD_RUL_PATH)
 
-    # date parameter
-    run_date = get_exec_date(log)
-
-    conn = get_connection()
-    db_init(conn)
+def tasks(init: PipeInit, nlp_rul: NLPRules, run_date, log):
 
     try:
-        adds_brz = load_bronze_adds(conn, date=run_date)
+        adds_brz = load_bronze_adds(init.conn, run_date,
+                                    log)
     except Exception as e:
-        log.critical("Missing data. Aborting.")
+        init.log.critical("Missing data. Aborting.")
         raise BronzeQueryError from e
         
     extr_gen = extract_ents(nlp_rul.nlp, adds_brz)
@@ -80,18 +67,35 @@ def main():
     inserted_count = 0
     try:
         for rs in extr_gen:
-            res = insert_silver(conn, rs, log)
+            res = insert_silver(init.conn, rs, init.log)
             inserted_count += res
     except Exception as e:
-        log.critical("Abort insertion to silver layer.")
+        init.log.critical("Abort insertion to silver layer.")
         raise SilverQueryError from e
     finally:
-        conn.close()
+        init.conn.close()
     
     if inserted_count < 1:
-        log.warning(f"No new ads were inserted to silver")
+        init.log.warning(f"No new ads were inserted to silver")
     else:
-        log.info(f"{inserted_count} new ads were inserted to silver")
+        init.log.info(f"{inserted_count} new ads were inserted to silver")
+
+def air_schedule():
+    init = PipeInit()
+    nlp_rul = NLPRules(init.log)
+    nlp_rul.load_model(MOD_RUL_PATH)
+
+    tasks(init, nlp_rul, today(), init.log)
+
+def main():
+    init = PipeInit()
+    nlp_rul = NLPRules(init.log)
+    nlp_rul.load_model(MOD_RUL_PATH)
+
+    # date parameter
+    run_date = get_exec_date(init.log)
+
+    tasks(init, nlp_rul, run_date, init.log)
 
 if __name__ == "__main__":
 
