@@ -1,46 +1,46 @@
 import pathlib
 
 import jobnlp
-from jobnlp.db.connection import get_connection
-from jobnlp.db.schemas import db_init
 from jobnlp.db.models import (SilverQueryError,
                               agreg_from_silver, insert_gold)
-from jobnlp.utils import logger, date_arg
+from jobnlp.utils import date_arg
+from jobnlp.pipeline.base import PipeInit
+from jobnlp.utils.date_arg import today
 
 DIR = pathlib.Path(jobnlp.__file__).parent
 LOG_PATH = pathlib.Path("log/entity_count.log")
 
-logger.setup_logging(logfile=LOG_PATH)
-log = logger.get_logger(__name__)
-
-def main():
-
-    run_date = date_arg.get_exec_date(log)
-
-    conn = get_connection()
-
-    db_init(conn)
-
-    log.info("Reading from the silver layer: %s", 
+def tasks(init: PipeInit, run_date):
+    
+    init.log.info("Reading from the silver layer: %s", 
              run_date.strftime("%d/%m/%Y"))
     
     try:
-        silver_ents = agreg_from_silver(conn,
+        silver_ents = agreg_from_silver(init.conn,
                                         date_eq=run_date,
-                                        log=log)
+                                        log=init.log)
     except Exception as e:
-        log.error(("It was not possible to read and group data"
+        init.log.error(("It was not possible to read and group data"
                   f"from the silver layer. For date: {run_date}"))
         raise SilverQueryError from e
     
     count = 0
     for r in silver_ents:
-        insert_gold(conn, r, log)
+        insert_gold(init.conn, r, init.log)
         count += 1
     if count > 0:
-        log.info("Inserted counts in gold layer for %i entities:", count)
+        init.log.info("Inserted counts in gold layer for %i entities:", count)
     else:
-        log.warning("No new entity counts were saved.")
+        init.log.warning("No new entity counts were saved.")
+
+def air_schedule():
+    init = PipeInit()
+    tasks(init, today())
+
+def main():
+    init = PipeInit()
+    run_date = date_arg.get_exec_date(init.log)
+    tasks(init, run_date)
 
 if __name__ == "__main__":
 
