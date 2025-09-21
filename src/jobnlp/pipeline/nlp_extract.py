@@ -53,11 +53,11 @@ def extract_ents(nlp: Language, data:list[tuple]) -> Iterator:
                 "hash": row[2]
             }
 
-def tasks(init: PipeInit, nlp_rul: NLPRules, run_date, log):
+def tasks(init: PipeInit, nlp_rul: NLPRules, run_date):
 
     try:
         adds_brz = load_bronze_adds(init.conn, run_date,
-                                    log)
+                                    init.log)
     except Exception as e:
         init.log.critical("Missing data. Aborting.")
         raise BronzeQueryError from e
@@ -85,7 +85,7 @@ def air_schedule():
     nlp_rul = NLPRules(init.log)
     nlp_rul.load_model(MOD_RUL_PATH)
 
-    tasks(init, nlp_rul, today(), init.log)
+    tasks(init, nlp_rul, today())
 
 def main():
     init = PipeInit()
@@ -95,7 +95,7 @@ def main():
     # date parameter
     run_date = get_exec_date(init.log)
 
-    tasks(init, nlp_rul, run_date, init.log)
+    tasks(init, nlp_rul, run_date)
 
 if __name__ == "__main__":
 
