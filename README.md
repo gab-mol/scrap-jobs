@@ -19,7 +19,7 @@ A modular data pipeline for scraping, cleaning, and storing online job advertise
 2. ☑ Deduplication logic
 3. ☑ Basic Docker support
 4. ☑ Extracting named entities from ads using spacy's NLP model and rules
-5. ☐ Airflow orchestration
+5. ☑ Airflow orchestration
 6. ☐ Example of data visualization with Dash
 
 ## Configuration and use
