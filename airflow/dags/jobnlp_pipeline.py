@@ -24,17 +24,17 @@ with DAG(
 
     clean_text = PythonOperator(
         task_id='clean_text',
-        python_callable=pipeline_tasks.clean_text.main,
+        python_callable=pipeline_tasks.clean_text.air_schedule,
     )
 
     nlp_extract = PythonOperator(
         task_id='nlp_extract',
-        python_callable=pipeline_tasks.nlp_extract.main,
+        python_callable=pipeline_tasks.nlp_extract.air_schedule,
     )
 
     entity_count = PythonOperator(
         task_id='entity_count',
-        python_callable=pipeline_tasks.entity_count.main,
+        python_callable=pipeline_tasks.entity_count.air_schedule,
     )
 
     fetch_raw >> clean_text >> nlp_extract >> entity_count
