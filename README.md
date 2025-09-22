@@ -53,7 +53,7 @@ To start the PostgreSQL service via Docker:
 
 ```bash
 docker network create jobsnlpnet
-docker compose --env-file config/.db.env -f docker/docker-compose-db.yaml up
+docker compose --env-file docker/.db.env -f docker/docker-compose-db.yaml up
 ```
 
 #### Available CLI tasks
@@ -105,7 +105,7 @@ airflow db migrate
 
 Start Airflow with Docker Compose:
 ```bash
-docker compose --env-file config/.airflow.env -f docker/docker-compose.yaml up -d
+docker compose --env-file docker/.airflow.env -f docker/docker-compose-airflow.yaml up -d
 ```
 The password for the users defined in `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` will be stored in:
 ```
